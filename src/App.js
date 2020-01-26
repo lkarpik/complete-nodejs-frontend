@@ -84,8 +84,6 @@ class App extends Component {
         if (resData.errors) {
           throw new Error('Validation failed.');
         }
-
-        console.log(resData);
         this.setState({
           isAuth: true,
           token: resData.data.login.token,
