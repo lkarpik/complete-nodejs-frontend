@@ -72,8 +72,8 @@ class Feed extends Component {
 
     const graphqlQuery = {
       query: `
-        {  
-          posts(page: ${page}) {
+        query FetchPosts($page: Int) {  
+          posts(page: $page) {
             posts {
               _id
               title
@@ -88,7 +88,11 @@ class Feed extends Component {
             totalPosts
           }
         }
-    `};
+    `,
+      variables: {
+        page: page
+      }
+    };
     fetch('http://localhost:8080/graphql', {
       method: 'POST',
       headers: {
@@ -124,12 +128,15 @@ class Feed extends Component {
     event.preventDefault();
     const graphqlQuery = {
       query: `
-        mutation {
-          updateStatus(status: "${this.state.status}") {
+        mutation UpdateStatus($userStatus: String!){
+          updateStatus(status: $userStatus) {
             status
           }
         }
-      `
+      `,
+      variables: {
+        userStatus: this.state.status
+      }
     };
     fetch('http://localhost:8080/graphql', {
       method: 'POST',
@@ -193,8 +200,8 @@ class Feed extends Component {
         const imageUrl = fileResData.filePath;
         let graphqlQuery = {
           query: `
-            mutation {
-              createPost(postInput: {content: "${postData.content}", title: "${postData.title}", imageUrl: "${imageUrl}"}) {
+            mutation CreatePost($title: String!, $content: String!, $imageUrl: String ){
+              createPost(postInput: {content: $content, title: $title, imageUrl: $imageUrl}) {
                 _id
                 title
                 content
@@ -206,7 +213,12 @@ class Feed extends Component {
                 createdAt
               }
             }
-          `
+          `,
+          variables: {
+            title: postData.title,
+            content: postData.content,
+            imageUrl: imageUrl
+          }
         };
         if (this.state.editPost) {
           graphqlQuery = {
@@ -262,20 +274,25 @@ class Feed extends Component {
         };
         this.setState(prevState => {
           let updatedPosts = [...prevState.posts];
+          let updatedTotalPosts = prevState.totalPosts;
           if (prevState.editPost) {
             const postIndex = prevState.posts.findIndex(
               p => p._id === prevState.editPost._id
             );
             updatedPosts[postIndex] = post;
           } else {
-            updatedPosts.pop();
+            updatedTotalPosts++;
+            if (prevState.posts.length >= 2) {
+              updatedPosts.pop();
+            }
             updatedPosts.unshift(post);
           }
           return {
             posts: updatedPosts,
             isEditing: false,
             editPost: null,
-            editLoading: false
+            editLoading: false,
+            totalPosts: updatedTotalPosts
           };
         });
       })
